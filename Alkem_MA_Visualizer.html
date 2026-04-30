@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Alkem Laboratories — M&A Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root{--navy:#1F3864;--blue:#2E5FA3;--lblue:#D6E4F0;--gold:#C9A84C;--lgold:#FDF3DC;
+    --green:#1E6B3C;--lgreen:#E2EFDA;--red:#C00000;--lred:#FCE4D6;
+    --gray:#F2F2F2;--dgray:#595959;--border:#d0d7e8;--card:#fff;--bg:#f0f4fb;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:#1a1a2e;font-size:14px;}
+  .hdr{background:var(--navy);position:sticky;top:0;z-index:100;}
+  .hdr-inner{display:flex;align-items:center;justify-content:space-between;padding:0 26px;height:52px;}
+  .hdr-left h1{color:#fff;font-size:15px;font-weight:700;letter-spacing:.4px;}
+  .hdr-left p{color:rgba(255,255,255,.5);font-size:10px;margin-top:1px;}
+  .gold-bar{background:var(--gold);height:3px;}
+  .badge{background:var(--gold);color:var(--navy);font-size:10px;font-weight:700;padding:3px 9px;border-radius:3px;}
+  .badge-blue{background:var(--blue);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:3px;margin-left:6px;}
+  .nav{background:#fff;border-bottom:1px solid var(--border);display:flex;padding:0 26px;overflow-x:auto;}
+  .tab{padding:11px 16px;font-size:12px;font-weight:600;color:var(--dgray);cursor:pointer;border-bottom:2.5px solid transparent;white-space:nowrap;transition:all .15s;}
+  .tab:hover{color:var(--blue);}
+  .tab.active{color:var(--navy);border-bottom-color:var(--gold);}
+  .page{display:none;padding:22px 26px;max-width:1200px;}
+  .page.active{display:block;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:18px;}
+  .card-title{font-size:10.5px;font-weight:700;color:var(--dgray);letter-spacing:.8px;text-transform:uppercase;margin-bottom:12px;}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:11px;margin-bottom:18px;}
+  .metric{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:13px 14px;}
+  .ml{font-size:10px;color:var(--dgray);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-bottom:5px;}
+  .mv{font-size:21px;font-weight:700;color:var(--navy);line-height:1;}
+  .ms{font-size:10px;color:var(--dgray);margin-top:3px;}
+  .mv.up{color:var(--green);} .mv.dn{color:var(--red);} .mv.gd{color:var(--gold);}
+  .ma-n{border-top:3px solid var(--navy);} .ma-b{border-top:3px solid var(--blue);}
+  .ma-g{border-top:3px solid var(--green);} .ma-r{border-top:3px solid var(--red);}
+  .ma-o{border-top:3px solid var(--gold);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  .mt{margin-top:14px;}
+  table.dt{width:100%;border-collapse:collapse;font-size:12px;}
+  table.dt th{background:var(--navy);color:#fff;padding:7px 9px;text-align:left;font-size:10.5px;font-weight:600;letter-spacing:.2px;}
+  table.dt th:not(:first-child){text-align:right;}
+  table.dt td{padding:6px 9px;border-bottom:1px solid var(--border);}
+  table.dt td:not(:first-child){text-align:right;}
+  table.dt tr:nth-child(even) td{background:var(--gray);}
+  table.dt tr:hover td{background:var(--lblue);}
+  table.dt .tot td{font-weight:700;background:var(--lblue)!important;color:var(--navy);border-top:1.5px solid var(--blue);}
+  table.dt .sub td{color:var(--dgray);font-size:11px;}
+  table.dt .hi td{background:var(--lgold)!important;font-weight:700;}
+  .pos{color:var(--green);font-weight:700;} .neg{color:var(--red);font-weight:700;}
+  .cw{position:relative;width:100%;}
+  .ctrl{display:grid;grid-template-columns:160px 1fr 80px;align-items:center;gap:10px;margin-bottom:10px;}
+  .cl{font-size:11.5px;color:var(--dgray);font-weight:600;}
+  input[type=range]{width:100%;accent-color:var(--navy);}
+  .cv{font-size:12.5px;font-weight:700;color:var(--navy);text-align:right;}
+  .pills{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;}
+  .pill{padding:5px 15px;border-radius:20px;font-size:11.5px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:all .15s;letter-spacing:.2px;}
+  .p-db{background:#f8d7da;color:#721c24;} .p-b{background:var(--lred);color:#843113;}
+  .p-base{background:var(--lblue);color:var(--navy);} .p-bull{background:#d4edda;color:#155724;}
+  .p-dbu{background:#c3e6cb;color:#0d3d1f;}
+  .pill.active{border-color:var(--navy);box-shadow:0 0 0 2px rgba(31,56,100,.15);}
+  .verdict{border-radius:7px;padding:14px 18px;display:flex;align-items:center;gap:14px;margin-top:12px;}
+  .v-acc{background:var(--lgreen);border:2px solid var(--green);}
+  .v-dil{background:var(--lred);border:2px solid var(--red);}
+  .vi{font-size:26px;font-weight:900;}
+  .v-acc .vi{color:var(--green);} .v-dil .vi{color:var(--red);}
+  .vt h3{font-size:15px;font-weight:800;}
+  .v-acc .vt h3{color:var(--green);} .v-dil .vt h3{color:var(--red);}
+  .vt p{font-size:11.5px;color:var(--dgray);margin-top:2px;}
+  .note{font-size:11px;color:var(--dgray);font-style:italic;margin-bottom:12px;}
+  @media(max-width:680px){.grid2,.grid3{grid-template-columns:1fr;}.hdr-inner{padding:0 14px;}.page{padding:14px;}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-left">
+      <h1>ALKEM LABORATORIES — M&A FINANCIAL MODEL</h1>
+      <p>NSE: ALKEM &nbsp;|&nbsp; BSE: 539523 &nbsp;|&nbsp; Pharmaceuticals &nbsp;|&nbsp; April 2026</p>
+    </div>
+    <div>
+      <span class="badge">ALKEM TARGET</span>
+      <span class="badge-blue">FY2023 DATA</span>
+    </div>
+  </div>
+  <div class="gold-bar"></div>
+</div>
+
+<div class="nav">
+  <div class="tab active" onclick="show('overview',this)">Overview</div>
+  <div class="tab" onclick="show('financials',this)">Financials</div>
+  <div class="tab" onclick="show('ppa',this)">PPA</div>
+  <div class="tab" onclick="show('accdil',this)">Accretion / Dilution</div>
+  <div class="tab" onclick="show('dcf',this)">DCF Valuation</div>
+  <div class="tab" onclick="show('scenario',this)">Scenarios</div>
+</div>
+
+<!-- ── OVERVIEW ── -->
+<div class="page active" id="page-overview">
+  <div class="metrics">
+    <div class="metric ma-n"><div class="ml">Current Price</div><div class="mv">Rs.5,421</div><div class="ms">NSE: ALKEM</div></div>
+    <div class="metric ma-o"><div class="ml">DCF Target (Blended)</div><div class="mv gd">Rs.5,658</div><div class="ms">+4.4% upside</div></div>
+    <div class="metric ma-b"><div class="ml">Deal Offer (25% prem.)</div><div class="mv">Rs.6,776</div><div class="ms">Equity Rs.8,10,259 MM</div></div>
+    <div class="metric ma-g"><div class="ml">FY2023 Revenue</div><div class="mv">Rs.1,15,993 MM</div><div class="ms">+9.1% YoY</div></div>
+    <div class="metric ma-r"><div class="ml">FY2023 EBITDA</div><div class="mv dn">13.9%</div><div class="ms">Trough — recovering</div></div>
+    <div class="metric ma-n"><div class="ml">Net Cash</div><div class="mv">Rs.21,576 MM</div><div class="ms">Zero pledged shares</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Alkem — Company Snapshot</div>
+      <table class="dt">
+        <tr><th>Parameter</th><th>Value</th></tr>
+        <tr><td>Founded</td><td>1973 — Samprada Singh</td></tr>
+        <tr><td>HQ</td><td>Mumbai, Maharashtra</td></tr>
+        <tr><td>Listing</td><td>NSE: ALKEM | BSE: 539523</td></tr>
+        <tr><td>Segment Rank</td><td>#1/#2 Anti-infectives, Vitamins, Pain</td></tr>
+        <tr><td>Flagship Brand</td><td>'Pan' (pantoprazole)</td></tr>
+        <tr><td>Distribution</td><td>130,000+ retail outlets</td></tr>
+        <tr><td>Shares Outstanding</td><td>119.57 Million (FV Rs.2)</td></tr>
+        <tr><td>Promoter Holding</td><td>56.83% (zero pledged)</td></tr>
+        <tr><td>FII Holding</td><td>17.89%</td></tr>
+        <tr><td>Market Cap</td><td>Rs.6,48,207 MM (~Rs.64,821 Cr)</td></tr>
+        <tr><td>5-Yr Beta (Regression)</td><td>0.577 vs Nifty 50</td></tr>
+        <tr><td>WACC (CAPM)</td><td>9.72% (relevered β = 0.352)</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Deal Structure — Base Case</div>
+      <table class="dt">
+        <tr><th>Parameter</th><th>Value</th></tr>
+        <tr><td>Target Equity Value</td><td>Rs.6,48,207 MM</td></tr>
+        <tr><td>Control Premium</td><td>25%</td></tr>
+        <tr><td>Offer Price/Share</td><td>Rs.6,776</td></tr>
+        <tr><td>Total Equity Consideration</td><td>Rs.8,10,259 MM</td></tr>
+        <tr><td>Less: Net Cash Absorbed</td><td>(Rs.21,576 MM)</td></tr>
+        <tr class="tot"><td>Enterprise Value (Deal)</td><td>Rs.7,88,683 MM</td></tr>
+        <tr><td>Financing: Cash (60%)</td><td>Rs.4,86,155 MM</td></tr>
+        <tr><td>Financing: Stock (40%)</td><td>Rs.3,24,104 MM</td></tr>
+        <tr><td>Annual Interest (7%)</td><td>Rs.34,031 MM</td></tr>
+        <tr><td>PPA D&A Step-Up</td><td>~Rs.11,583 MM/yr</td></tr>
+        <tr><td>Total Synergies (run-rate)</td><td>Rs.7,000 MM</td></tr>
+        <tr class="hi"><td>Year 1 EPS Verdict</td><td class="neg">DILUTIVE (~95.8%)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="card mt">
+    <div class="card-title">Alkem Revenue vs EBITDA — FY2019 to FY2028E (INR MM)</div>
+    <div style="display:flex;gap:14px;font-size:11.5px;margin-bottom:8px;color:var(--dgray)">
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#2E5FA3;display:inline-block"></span>Revenue (Rs.MM)</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#C9A84C;display:inline-block"></span>EBITDA (Rs.MM)</span>
+      <span style="display:flex;align-items:center;gap:5px"><span style="width:2px;height:10px;background:#1E6B3C;display:inline-block"></span><span style="width:8px;height:2px;background:#1E6B3C;display:inline-block"></span>EBITDA Margin %</span>
+    </div>
+    <div class="cw" style="height:270px">
+      <canvas id="overviewChart" role="img" aria-label="Combined bar and line chart showing Alkem Revenue and EBITDA from FY2019 to FY2028E, with EBITDA margin line"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── FINANCIALS ── -->
+<div class="page" id="page-financials">
+  <div class="card">
+    <div class="card-title">Profit & Loss — 5-Year Actuals + 5-Year Projections (Base Case, INR MM)</div>
+    <table class="dt">
+      <tr><th>Metric</th><th>FY2019A</th><th>FY2020A</th><th>FY2021A</th><th>FY2022A</th><th>FY2023A</th><th>FY2024E</th><th>FY2025E</th><th>FY2026E</th><th>FY2027E</th><th>FY2028E</th></tr>
+      <tr><td><b>Revenue</b></td><td>73,572</td><td>83,444</td><td>88,650</td><td>1,06,342</td><td>1,15,993</td><td>1,23,230</td><td>1,35,975</td><td>1,47,925</td><td>1,59,124</td><td>1,69,237</td></tr>
+      <tr class="sub"><td>YoY Growth</td><td>—</td><td>+13.4%</td><td>+6.2%</td><td>+20.0%</td><td>+9.1%</td><td>+6.2%</td><td>+10.3%</td><td>+8.8%</td><td>+7.6%</td><td>+6.4%</td></tr>
+      <tr><td>Gross Profit</td><td>44,122</td><td>49,994</td><td>53,666</td><td>64,539</td><td>66,924</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr class="sub"><td>Gross Margin</td><td>60.0%</td><td>59.9%</td><td>60.5%</td><td>60.7%</td><td>57.7%</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr class="tot"><td>EBITDA</td><td>11,148</td><td>14,734</td><td>19,424</td><td>20,529</td><td>16,095</td><td>21,664</td><td>25,282</td><td>28,005</td><td>30,174</td><td>32,134</td></tr>
+      <tr class="sub"><td>EBITDA Margin</td><td>15.2%</td><td>17.7%</td><td>21.9%</td><td>19.3%</td><td class="neg">13.9%</td><td>17.6%</td><td>18.6%</td><td>18.9%</td><td>19.0%</td><td>19.0%</td></tr>
+      <tr><td>PAT</td><td>7,736</td><td>11,493</td><td>16,178</td><td>16,803</td><td>10,068</td><td>17,326</td><td>20,208</td><td>22,833</td><td>24,916</td><td>26,784</td></tr>
+      <tr class="sub"><td>EPS (Rs.)</td><td>63.6</td><td>94.3</td><td>132.6</td><td>137.6</td><td>82.3</td><td>144.9</td><td>168.9</td><td>190.9</td><td>208.3</td><td>223.9</td></tr>
+    </table>
+  </div>
+  <div class="grid2 mt">
+    <div class="card">
+      <div class="card-title">Balance Sheet Highlights (INR MM)</div>
+      <table class="dt">
+        <tr><th>Item</th><th>FY2021</th><th>FY2022</th><th>FY2023</th></tr>
+        <tr><td>Total Assets</td><td>1,15,193</td><td>1,40,692</td><td>1,37,566</td></tr>
+        <tr><td>Shareholders Equity</td><td>73,767</td><td>86,379</td><td>90,453</td></tr>
+        <tr><td>Total Borrowings</td><td>17,222</td><td>25,802</td><td>13,072</td></tr>
+        <tr><td>Cash + Fixed Deposits</td><td>19,905</td><td>25,786</td><td>26,169</td></tr>
+        <tr class="tot"><td>Net Cash/(Debt)</td><td>+2,683</td><td>(16)</td><td>+13,097</td></tr>
+        <tr><td>Book Value/Share (Rs.)</td><td>—</td><td>—</td><td>755.7</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Key Ratios (FY2023)</div>
+      <table class="dt">
+        <tr><th>Ratio</th><th>Value</th></tr>
+        <tr><td>P/E (TTM)</td><td>44.0x</td></tr>
+        <tr><td>P/BV</td><td>11.0x</td></tr>
+        <tr><td>EV/EBITDA</td><td>33.6x</td></tr>
+        <tr><td>Return on Equity (ROE)</td><td>25.0%</td></tr>
+        <tr><td>Return on Capital Employed</td><td>18.2%</td></tr>
+        <tr><td>Return on Assets (ROA)</td><td>7.3%</td></tr>
+        <tr><td>Current Ratio</td><td>1.92x</td></tr>
+        <tr><td>Interest Coverage</td><td>12.1x</td></tr>
+        <tr><td>Debt-to-Equity</td><td>2.96x (incl. WC)</td></tr>
+        <tr><td>Dividend Yield</td><td>0.28%</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── PPA ── -->
+<div class="page" id="page-ppa">
+  <div class="metrics">
+    <div class="metric ma-b"><div class="ml">Deal EV</div><div class="mv">Rs.7,88,683 MM</div><div class="ms">At 25% premium</div></div>
+    <div class="metric ma-n"><div class="ml">Net Identifiable Assets</div><div class="mv">Rs.1,58,563 MM</div><div class="ms">FMV of all assets</div></div>
+    <div class="metric ma-r"><div class="ml">Goodwill Created</div><div class="mv dn">Rs.6,30,120 MM</div><div class="ms">~80% of deal EV</div></div>
+    <div class="metric ma-o"><div class="ml">Annual D&A Step-Up</div><div class="mv gd">Rs.11,583 MM</div><div class="ms">72% of FY23 EBITDA</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">PPA Allocation — Alkem Assets</div>
+      <table class="dt">
+        <tr><th>Asset Class</th><th>FMV (Rs.MM)</th><th>Life</th><th>D&A/yr</th></tr>
+        <tr><td>PP&E (Plants, Equip.)</td><td>32,135</td><td>15–25yr</td><td>~2,000</td></tr>
+        <tr><td>'Pan' Brand Portfolio</td><td>45,000</td><td>20 yr</td><td>2,250</td></tr>
+        <tr><td>R&D Pipeline / IP</td><td>18,000</td><td>10 yr</td><td>1,800</td></tr>
+        <tr><td>Physician Relationships</td><td>12,000</td><td>12 yr</td><td>1,000</td></tr>
+        <tr><td>Distribution Network</td><td>8,000</td><td>15 yr</td><td>533</td></tr>
+        <tr><td>Manufacturing Know-How</td><td>5,000</td><td>10 yr</td><td>500</td></tr>
+        <tr><td>Inventory Step-Up</td><td>51,500</td><td>1 yr</td><td>3,500</td></tr>
+        <tr><td>Assumed Liabilities</td><td>(13,072)</td><td>—</td><td>—</td></tr>
+        <tr class="tot"><td>Net Identifiable Assets</td><td>1,58,563</td><td>—</td><td>11,583</td></tr>
+        <tr style="background:var(--lred)"><td><b>Goodwill (Residual)</b></td><td><b>6,30,120</b></td><td>Indef.</td><td>Impairment</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Intangibles Breakdown (Rs.MM)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:9px;margin-bottom:10px;font-size:11.5px">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#2E5FA3;display:inline-block"></span>'Pan' Brand Rs.45,000</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#C9A84C;display:inline-block"></span>R&D/IP Rs.18,000</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#1E6B3C;display:inline-block"></span>Phys. Rel. Rs.12,000</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#595959;display:inline-block"></span>Distribution Rs.8,000</span>
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#A07030;display:inline-block"></span>Know-How Rs.5,000</span>
+      </div>
+      <div class="cw" style="height:200px">
+        <canvas id="ppaChart" role="img" aria-label="Donut chart showing Alkem identified intangibles: Pan brand 50%, RD IP 20%, physician relationships 13%, distribution 9%, know-how 6% and inventory 0%"></canvas>
+      </div>
+      <div class="note mt" style="margin-top:10px">Note: 'Pan' brand (Rs.45,000 MM) alone represents 50% of identified intangibles — India's top pantoprazole brand by volume. This drives the D&A burden post-acquisition.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ACCRETION / DILUTION ── -->
+<div class="page" id="page-accdil">
+  <div class="note">Adjust parameters below — all based on Alkem FY2023 actuals (PAT: Rs.10,068 MM, Shares: 119.57M).</div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Deal Parameters</div>
+      <div class="ctrl"><span class="cl">Deal Premium (%)</span><input type="range" min="10" max="50" value="25" step="1" id="sl-prem" oninput="calcAcc()"><span class="cv" id="vl-prem">25%</span></div>
+      <div class="ctrl"><span class="cl">Cash % of Deal</span><input type="range" min="0" max="100" value="60" step="5" id="sl-cash" oninput="calcAcc()"><span class="cv" id="vl-cash">60%</span></div>
+      <div class="ctrl"><span class="cl">Debt Rate (%)</span><input type="range" min="5" max="12" value="7" step="0.5" id="sl-rate" oninput="calcAcc()"><span class="cv" id="vl-rate">7.0%</span></div>
+      <div class="ctrl"><span class="cl">Synergies (Rs.MM)</span><input type="range" min="0" max="20000" value="7000" step="500" id="sl-syn" oninput="calcAcc()"><span class="cv" id="vl-syn">7,000</span></div>
+      <div class="ctrl"><span class="cl">D&A Step-Up (Rs.MM)</span><input type="range" min="0" max="20000" value="11583" step="500" id="sl-dda" oninput="calcAcc()"><span class="cv" id="vl-dda">11,583</span></div>
+      <div class="ctrl"><span class="cl">Acquirer NI (Rs.MM)</span><input type="range" min="5000" max="60000" value="20000" step="1000" id="sl-acqni" oninput="calcAcc()"><span class="cv" id="vl-acqni">20,000</span></div>
+      <div class="ctrl"><span class="cl">Acquirer Share Price</span><input type="range" min="100" max="2000" value="800" step="50" id="sl-sp" oninput="calcAcc()"><span class="cv" id="vl-sp">Rs.800</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">EPS Accretion / Dilution</div>
+      <table class="dt" id="accTbl"><tr><th>Metric</th><th>Value (Rs.MM)</th></tr></table>
+      <div id="vbox" class="verdict v-dil">
+        <div class="vi" id="vi">▼</div>
+        <div class="vt"><h3 id="vtitle">DILUTIVE</h3><p id="vsub">Adjust synergies or premium to change</p></div>
+      </div>
+    </div>
+  </div>
+  <div class="card mt">
+    <div class="card-title">Sensitivity: Premium vs Synergies — EPS % Change</div>
+    <div class="note">Rows = deal premium, Columns = synergies (Rs.MM). Green = accretive.</div>
+    <div id="sens"></div>
+  </div>
+</div>
+
+<!-- ── DCF ── -->
+<div class="page" id="page-dcf">
+  <div class="note">Alkem standalone DCF — FCFF FY2024E–FY2028E base case. Adjust WACC and g to see live EV range.</div>
+  <div class="grid2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">DCF Assumptions</div>
+      <div class="ctrl"><span class="cl">WACC (%)</span><input type="range" min="7" max="14" value="9.72" step="0.1" id="sl-wacc" oninput="calcDCF()"><span class="cv" id="vl-wacc">9.72%</span></div>
+      <div class="ctrl"><span class="cl">Terminal Growth g (%)</span><input type="range" min="2" max="8" value="6" step="0.5" id="sl-g" oninput="calcDCF()"><span class="cv" id="vl-g">6.0%</span></div>
+      <div class="ctrl"><span class="cl">Exit Multiple (x EBITDA)</span><input type="range" min="15" max="40" value="25" step="1" id="sl-em" oninput="calcDCF()"><span class="cv" id="vl-em">25x</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Implied Valuation</div>
+      <table class="dt" id="dcfTbl">
+        <tr><th>Method</th><th>EV (Rs.MM)</th><th>Eq.Val (Rs.MM)</th><th>Price/Share</th></tr>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">FCFF Projections — Alkem Base Case (INR MM)</div>
+    <table class="dt">
+      <tr><th>Item</th><th>FY2024E</th><th>FY2025E</th><th>FY2026E</th><th>FY2027E</th><th>FY2028E</th></tr>
+      <tr><td>Revenue</td><td>1,23,230</td><td>1,35,975</td><td>1,47,925</td><td>1,59,124</td><td>1,69,237</td></tr>
+      <tr><td>EBITDA (Margin)</td><td>21,664 (17.6%)</td><td>25,282 (18.6%)</td><td>28,005 (18.9%)</td><td>30,174 (19.0%)</td><td>32,134 (19.0%)</td></tr>
+      <tr><td>NOPAT</td><td>16,262</td><td>19,002</td><td>21,469</td><td>23,399</td><td>25,152</td></tr>
+      <tr><td>Add: D&A</td><td>2,655</td><td>2,715</td><td>2,771</td><td>2,821</td><td>2,865</td></tr>
+      <tr><td>Less: Capex</td><td>(4,785)</td><td>(5,126)</td><td>(5,432)</td><td>(5,704)</td><td>(5,946)</td></tr>
+      <tr><td>Less: Delta WC</td><td>(5,421)</td><td>(3,268)</td><td>(2,780)</td><td>(2,617)</td><td>(2,424)</td></tr>
+      <tr class="tot"><td>FCFF</td><td>8,711</td><td>13,323</td><td>16,028</td><td>17,899</td><td>19,647</td></tr>
+      <tr id="pvrow"><td>PV of FCFF</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    </table>
+  </div>
+  <div class="card mt">
+    <div class="card-title">DCF Implied Price vs Market vs Offer Price (Rs./share)</div>
+    <div class="cw" style="height:230px"><canvas id="dcfChart" role="img" aria-label="Bar chart comparing DCF implied share prices under three valuation methods versus current market price and offer price for Alkem"></canvas></div>
+  </div>
+</div>
+
+<!-- ── SCENARIOS ── -->
+<div class="page" id="page-scenario">
+  <div class="metrics">
+    <div class="metric ma-r"><div class="ml">Bear Case Target</div><div class="mv dn">Rs.4,352</div><div class="ms">(19.7%) downside</div></div>
+    <div class="metric ma-b"><div class="ml">Base Case Target</div><div class="mv">Rs.5,658</div><div class="ms">+4.4% upside</div></div>
+    <div class="metric ma-g"><div class="ml">Bull Case Target</div><div class="mv up">Rs.7,428</div><div class="ms">+37.0% upside</div></div>
+    <div class="metric ma-o"><div class="ml">Offer Price (25% prem.)</div><div class="mv gd">Rs.6,776</div><div class="ms">19.8% above DCF base</div></div>
+  </div>
+  <div class="pills">
+    <div class="pill p-db" onclick="selScen('deep-bear',this)">Deep Bear</div>
+    <div class="pill p-b" onclick="selScen('bear',this)">Bear</div>
+    <div class="pill p-base active" onclick="selScen('base',this)">Base</div>
+    <div class="pill p-bull" onclick="selScen('bull',this)">Bull</div>
+    <div class="pill p-dbu" onclick="selScen('deep-bull',this)">Deep Bull</div>
+  </div>
+  <div class="grid2">
+    <div class="card"><div class="card-title">Scenario Assumptions</div><table class="dt" id="scTbl1"><tr><th>Parameter</th><th>Value</th></tr></table></div>
+    <div class="card"><div class="card-title">Implied Outputs</div><table class="dt" id="scTbl2"><tr><th>Metric</th><th>Value</th></tr></table></div>
+  </div>
+  <div class="card mt">
+    <div class="card-title">Scenario EV vs Offer Price (Rs.MM)</div>
+    <div class="cw" style="height:250px"><canvas id="scenChart" role="img" aria-label="Bar chart showing Alkem implied enterprise value across 5 scenarios from Deep Bear to Deep Bull with offer price reference line"></canvas></div>
+  </div>
+  <div class="card mt">
+    <div class="card-title">WACC × Terminal Growth — Implied Price/Share (Rs.)</div>
+    <div class="note">Offer price = Rs.6,776. Green cells = deal priced below DCF intrinsic value.</div>
+    <div id="waccGrid"></div>
+  </div>
+</div>
+
+<script>
+// ── nav ──────────────────────────────────────────────────────────────────────
+function show(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='dcf'){setTimeout(()=>{calcDCF();renderDCFChart();},50);}
+  if(id==='scenario'){setTimeout(()=>{renderScenChart();renderWaccGrid();},50);}
+}
+
+// ── overview chart ───────────────────────────────────────────────────────────
+const yrs=['FY19A','FY20A','FY21A','FY22A','FY23A','FY24E','FY25E','FY26E','FY27E','FY28E'];
+const rev=[73572,83444,88650,106342,115993,123230,135975,147925,159124,169237];
+const ebitda=[11148,14734,19424,20529,16095,21664,25282,28005,30174,32134];
+const margin=rev.map((r,i)=>+(ebitda[i]/r*100).toFixed(1));
+
+new Chart(document.getElementById('overviewChart'),{
+  data:{labels:yrs,datasets:[
+    {type:'bar',label:'Revenue',data:rev,backgroundColor:'rgba(46,95,163,0.75)',yAxisID:'y',borderRadius:3},
+    {type:'bar',label:'EBITDA',data:ebitda,backgroundColor:'rgba(201,168,76,0.85)',yAxisID:'y',borderRadius:3},
+    {type:'line',label:'EBITDA Margin %',data:margin,borderColor:'#1E6B3C',pointBackgroundColor:'#1E6B3C',yAxisID:'y2',fill:false,tension:.3,pointRadius:4}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{y:{ticks:{callback:v=>v>=1000?Math.round(v/1000)+'k':v}},
+      y2:{position:'right',min:0,max:30,ticks:{callback:v=>v+'%'},grid:{drawOnChartArea:false}}}}
+});
+
+// ── PPA donut ─────────────────────────────────────────────────────────────────
+new Chart(document.getElementById('ppaChart'),{
+  type:'doughnut',
+  data:{labels:["'Pan' Brand","R&D / IP","Physician Rel.","Distribution","Know-How"],
+    datasets:[{data:[45000,18000,12000,8000,5000],
+      backgroundColor:['#2E5FA3','#C9A84C','#1E6B3C','#595959','#A07030'],borderWidth:2,borderColor:'#fff'}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:ctx=>` Rs.${ctx.parsed.toLocaleString()} MM`}}}}
+});
+
+// ── Accretion / Dilution ─────────────────────────────────────────────────────
+function calcAcc(){
+  const prem  =+document.getElementById('sl-prem').value/100;
+  const cashP =+document.getElementById('sl-cash').value/100;
+  const rate  =+document.getElementById('sl-rate').value/100;
+  const syn   =+document.getElementById('sl-syn').value;
+  const dda   =+document.getElementById('sl-dda').value;
+  const acqNI =+document.getElementById('sl-acqni').value;
+  const sp    =+document.getElementById('sl-sp').value;
+  const t     =0.157; // Alkem effective tax rate
+
+  document.getElementById('vl-prem').textContent  =Math.round(prem*100)+'%';
+  document.getElementById('vl-cash').textContent  =Math.round(cashP*100)+'%';
+  document.getElementById('vl-rate').textContent  =(rate*100).toFixed(1)+'%';
+  document.getElementById('vl-syn').textContent   =syn.toLocaleString();
+  document.getElementById('vl-dda').textContent   =dda.toLocaleString();
+  document.getElementById('vl-acqni').textContent =acqNI.toLocaleString();
+  document.getElementById('vl-sp').textContent    ='Rs.'+sp;
+
+  const alkemEqV=648207;
+  const offerEq =alkemEqV*(1+prem);
+  const cashDbt =offerEq*cashP;
+  const stockFin=offerEq*(1-cashP);
+  const newShares=(stockFin*1e6)/sp; // acquirer new shares
+  const acqShares=400e6; // illustrative acquirer 400M shares
+  const totShares=acqShares+newShares;
+
+  const alkemPAT=10068;
+  const intExp  =cashDbt*rate*(1-t); // after-tax interest in MM (cashDbt already in MM)
+  const synAt   =syn*(1-t);
+  const ddaAt   =dda*(1-t);
+  const pfNI    =acqNI+alkemPAT+synAt-ddaAt-intExp;
+
+  const acqEPS =acqNI/(acqShares/1e6);
+  const pfEPS  =pfNI/(totShares/1e6);
+  const epsChg =pfEPS-acqEPS;
+  const epsPct =(epsChg/acqEPS)*100;
+  const acc    =epsChg>=0;
+
+  const rows=[
+    ['Acquirer Standalone NI (Rs.MM)',acqNI.toLocaleString(),''],
+    ['Alkem FY2023 PAT (Rs.MM)','10,068','Actual'],
+    ['+ Synergies after tax (Rs.MM)',synAt.toFixed(0),'Rs.'+syn+' × (1−15.7%)'],
+    ['− PPA D&A after tax (Rs.MM)','('+ddaAt.toFixed(0)+')','Key dilutive force'],
+    ['− Interest after tax (Rs.MM)','('+intExp.toFixed(0)+')','Rs.'+cashDbt.toFixed(0)+' MM @ '+Math.round(rate*100)+'%'],
+    ['Pro Forma NI (Rs.MM)',pfNI.toFixed(0),''],
+    ['Acquirer Shares (M)','400.0','Illustrative'],
+    ['+ New Shares Issued (M)',(newShares/1e6).toFixed(1),'Stock consideration'],
+    ['Total Shares (M)',(totShares/1e6).toFixed(1),''],
+    ['Standalone EPS (Rs.)',acqEPS.toFixed(2),''],
+    ['Pro Forma EPS (Rs.)',pfEPS.toFixed(2),''],
+    ['EPS Change (Rs.)',(epsChg>=0?'+':'')+epsChg.toFixed(2),''],
+    ['% EPS Change',(epsPct>=0?'+':'')+epsPct.toFixed(1)+'%',''],
+  ];
+  const tb=document.getElementById('accTbl');
+  tb.innerHTML='<tr><th>Metric</th><th>Value</th><th>Note</th></tr>';
+  rows.forEach((r,i)=>{
+    const last=i>=rows.length-2;
+    const cls=last?(acc?'pos':'neg'):'';
+    tb.innerHTML+=`<tr><td>${r[0]}</td><td class="${cls}">${r[1]}</td><td style="color:var(--dgray);font-size:11px">${r[2]}</td></tr>`;
+  });
+
+  const vb=document.getElementById('vbox');
+  vb.className='verdict '+(acc?'v-acc':'v-dil');
+  document.getElementById('vi').textContent=acc?'▲':'▼';
+  document.getElementById('vtitle').textContent=acc?'ACCRETIVE':'DILUTIVE';
+  document.getElementById('vsub').textContent=acc
+    ?`EPS increases by Rs.${epsChg.toFixed(2)} (+${epsPct.toFixed(1)}%)`
+    :`EPS decreases by Rs.${Math.abs(epsChg).toFixed(2)} (${epsPct.toFixed(1)}%)`;
+
+  // Sensitivity matrix: premiums vs synergies
+  const prems=[10,15,20,25,30,40];
+  const syns=[0,3500,7000,10000,14000,18000];
+  let html='<div style="overflow-x:auto"><table class="dt" style="font-size:11px"><tr><th>Prem↓/Syn→</th>';
+  syns.forEach(s=>{html+=`<th>Rs.${(s/1000).toFixed(0)}k</th>`;});
+  html+='</tr>';
+  prems.forEach(p=>{
+    html+=`<tr><td><b>${p}%</b></td>`;
+    syns.forEach(s=>{
+      const cb=(648207*(1+p/100))*cashP;
+      const ie=cb*rate*(1-t);
+      const pn=acqNI+10068+s*(1-t)-dda*(1-t)-ie;
+      const ns=((648207*(1+p/100)*(1-cashP))*1e6)/sp;
+      const pe=pn/((400e6+ns)/1e6);
+      const ch=((pe-acqEPS)/acqEPS)*100;
+      const bg=ch>=2?'#c3e6cb':ch>=0?'#e2efda':ch>=-5?'#fce4d6':'#f8d7da';
+      const fc=ch>=0?'#155724':'#721c24';
+      html+=`<td style="background:${bg};color:${fc};font-weight:700">${ch>=0?'+':''}${ch.toFixed(1)}%</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</table></div>';
+  document.getElementById('sens').innerHTML=html;
+}
+calcAcc();
+
+// ── DCF ──────────────────────────────────────────────────────────────────────
+const fcff=[8711,13323,16028,17899,19647];
+const ebitdaY5=32134;
+const netCash=21576, shares=119.57;
+let dcfChart=null;
+
+function calcDCF(){
+  const w=+document.getElementById('sl-wacc').value/100;
+  const g=+document.getElementById('sl-g').value/100;
+  const em=+document.getElementById('sl-em').value;
+
+  document.getElementById('vl-wacc').textContent=(w*100).toFixed(2)+'%';
+  document.getElementById('vl-g').textContent=(g*100).toFixed(1)+'%';
+  document.getElementById('vl-em').textContent=em+'x';
+
+  let pv=0;
+  const pvs=fcff.map((f,i)=>{const v=f/Math.pow(1+w,i+1);pv+=v;return v.toFixed(0);});
+  document.getElementById('pvrow').innerHTML=
+    '<td><b>PV of FCFF</b></td>'+pvs.map(v=>`<td>${Number(v).toLocaleString()}</td>`).join('');
+
+  const tvGGM=(fcff[4]*(1+g))/(w-g);
+  const evGGM=pv+tvGGM/Math.pow(1+w,5);
+  const tvEx=ebitdaY5*em;
+  const evEx=pv+tvEx/Math.pow(1+w,5);
+  const evBl=(evGGM+evEx)/2;
+
+  const rows=[
+    ['Gordon Growth (g='+( g*100).toFixed(1)+'%)',Math.round(evGGM).toLocaleString(),Math.round(evGGM+netCash).toLocaleString(),'Rs.'+Math.round((evGGM+netCash)/shares)],
+    ['Exit Multiple ('+em+'x EBITDA)',Math.round(evEx).toLocaleString(),Math.round(evEx+netCash).toLocaleString(),'Rs.'+Math.round((evEx+netCash)/shares)],
+    ['Blended (Average)',Math.round(evBl).toLocaleString(),Math.round(evBl+netCash).toLocaleString(),'Rs.'+Math.round((evBl+netCash)/shares)],
+    ['Market Price (NSE)','—','—','Rs.5,421'],
+    ['Offer Price (25% prem.)','—','—','Rs.6,776'],
+  ];
+  const tb=document.getElementById('dcfTbl');
+  tb.innerHTML='<tr><th>Method</th><th>EV (Rs.MM)</th><th>Eq.Val (Rs.MM)</th><th>Price/Share</th></tr>';
+  rows.forEach((r,i)=>{
+    const cls=i===2?'tot':i>=3?'hi':'';
+    tb.innerHTML+=`<tr class="${cls}"><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`;
+  });
+  window._dcfPrices=[Math.round((evGGM+netCash)/shares),Math.round((evEx+netCash)/shares),Math.round((evBl+netCash)/shares),5421,6776];
+}
+calcDCF();
+
+function renderDCFChart(){
+  const ps=window._dcfPrices||[4418,6898,5658,5421,6776];
+  const ctx=document.getElementById('dcfChart');
+  if(dcfChart)dcfChart.destroy();
+  dcfChart=new Chart(ctx,{type:'bar',
+    data:{labels:['Gordon Growth','Exit Multiple','Blended','Market Price','Offer Price (25%)'],
+      datasets:[{data:ps,backgroundColor:['#2E5FA3','#C9A84C','#1E6B3C','#595959','rgba(192,0,0,0.75)'],borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>' Rs.'+c.parsed.y.toLocaleString()}}},
+      scales:{y:{min:3000,ticks:{callback:v=>'Rs.'+v.toLocaleString()}}}}});
+}
+
+// ── Scenarios ─────────────────────────────────────────────────────────────────
+const scens={
+  'deep-bear':{rev:'3.5%',margin:'11%',syn:'0%',wacc:'11%',g:'3.5%',ev:390000,price:'Rs.3,280',upside:'(39.5%)',epsV:'~(98%)'},
+  'bear':     {rev:'5.3%',margin:'14.5%',syn:'25%',wacc:'10.2%',g:'4.5%',ev:493428,price:'Rs.4,352',upside:'(19.7%)',epsV:'~(96%)'},
+  'base':     {rev:'10.3%',margin:'19%',syn:'75%',wacc:'9.72%',g:'6.0%',ev:655038,price:'Rs.5,658',upside:'+4.4%',epsV:'~(95.8%)'},
+  'bull':     {rev:'15.4%',margin:'21%',syn:'100%',wacc:'9.2%',g:'6.5%',ev:868110,price:'Rs.7,428',upside:'+37.0%',epsV:'~(94%)'},
+  'deep-bull':{rev:'20.0%',margin:'24%',syn:'125%',wacc:'8.5%',g:'7.0%',ev:1050000,price:'Rs.8,830',upside:'+62.9%',epsV:'~(92%)'},
+};
+let scChart=null;
+
+function selScen(id,el){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  const s=scens[id];
+  const t1=document.getElementById('scTbl1');
+  const t2=document.getElementById('scTbl2');
+  t1.innerHTML='<tr><th>Parameter</th><th>Value</th></tr>'+
+    [['Revenue CAGR (FY24–28)',s.rev],['EBITDA Margin Target',s.margin],['Synergy Capture',s.syn],['WACC Used',s.wacc],['Terminal Growth (g)',s.g]]
+    .map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td></tr>`).join('');
+  const up=parseFloat(s.upside)>=0;
+  const epsUp=s.epsV.includes('+');
+  t2.innerHTML='<tr><th>Metric</th><th>Value</th></tr>'+
+    [['Implied EV (Rs.MM)',(s.ev/1000).toFixed(0)+'k'],['Implied Price/Share',s.price],
+     ['vs Current Price (Rs.5,421)',s.upside],['vs Offer Price (Rs.6,776)',((s.ev+netCash*1000)/119570000/6776*100-100).toFixed(1)+'%'],
+     ['EPS Verdict (Year 1)',s.epsV]]
+    .map((r,i)=>{
+      const cls=i===2?(up?'pos':'neg'):i===4?'neg':'';
+      return `<tr><td>${r[0]}</td><td class="${cls}"><b>${r[1]}</b></td></tr>`;
+    }).join('');
+}
+selScen('base',document.querySelector('.p-base'));
+
+function renderScenChart(){
+  const ctx=document.getElementById('scenChart');
+  if(scChart)scChart.destroy();
+  const evs=Object.values(scens).map(s=>s.ev);
+  scChart=new Chart(ctx,{data:{labels:['Deep Bear','Bear','Base','Bull','Deep Bull'],
+    datasets:[
+      {type:'bar',data:evs,backgroundColor:['rgba(192,0,0,.7)','rgba(200,100,60,.8)','#2E5FA3','rgba(30,107,60,.8)','rgba(15,70,40,.9)'],borderRadius:4},
+      {type:'line',data:[788683,788683,788683,788683,788683],borderColor:'#C9A84C',borderDash:[6,4],pointRadius:0,borderWidth:2.5,label:'Offer EV'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>` Rs.${Math.round(c.parsed.y/1000)}k MM`}}},
+      scales:{y:{min:200000,ticks:{callback:v=>'Rs.'+(v/1000).toFixed(0)+'k MM'}}}}});
+}
+
+function renderWaccGrid(){
+  const ws=[8.0,9.0,9.72,10.5,11.5,12.5];
+  const gs=[3.5,4.5,5.5,6.0,6.5,7.0];
+  let html='<div style="overflow-x:auto"><table class="dt" style="font-size:11.5px"><tr><th>WACC↓/g→</th>';
+  gs.forEach(g=>{html+=`<th>g=${g}%</th>`;});
+  html+='</tr>';
+  ws.forEach(w=>{
+    html+=`<tr><td><b>${w}%</b></td>`;
+    gs.forEach(g=>{
+      const wc=w/100,gc=g/100;
+      let pv=0;
+      fcff.forEach((f,i)=>{pv+=f/Math.pow(1+wc,i+1);});
+      const tv=(fcff[4]*(1+gc))/(wc-gc);
+      const ev=pv+tv/Math.pow(1+wc,5);
+      const pr=Math.round((ev+netCash)/shares);
+      const bg=pr>6776?'#c3e6cb':pr>5658?'#e2efda':pr>4500?'#fff':pr>3500?'#fce4d6':'#f8d7da';
+      const fc=pr>5658?'#155724':pr<4000?'#721c24':'#1a1a2e';
+      const star=Math.abs(w-9.72)<0.05&&Math.abs(g-6.0)<0.1?'★ ':'';
+      html+=`<td style="background:${bg};color:${fc};font-weight:700">${star}Rs.${pr.toLocaleString()}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+='</table></div>';
+  document.getElementById('waccGrid').innerHTML=html;
+}
+renderWaccGrid();
+renderScenChart();
+</script>
+</body>
+</html>
